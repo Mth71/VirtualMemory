@@ -1,0 +1,13 @@
+# executável e objetos
+vm
+*.o
+
+# pacote de entrega
+*.tar
+
+# arquivos do professor e saída gerada
+addresses.txt
+BACKING_STORE.bin
+correct_esperado.txt
+correct.txt
+testes/
