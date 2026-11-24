@@ -51,3 +51,10 @@ int mem_page_fault(int page, FILE *backing, int alg, int *evicted){
     page_table[page] = frame; frame_page[frame] = page;
     return frame;
 }
+void mem_touch(int frame, int now){
+    last_use[frame] = now;
+}
+
+signed char mem_read(int frame, int offset){
+    return memory[frame][offset];
+}
