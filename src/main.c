@@ -41,7 +41,7 @@ static int parse_address(const char *s, int *out){
 static int validate_addresses(const char *filename){
     FILE *f = fopen(filename, "r");
     if(f == NULL){
-        fprintf(stderr, "Erro: Não foi possível abrir {%s}\n", filename);
+        fprintf(stderr, "Erro: Não foi possível abrir %s\n", filename);
         return -1;
     }
     char line[LINE_MAX_LEN];
@@ -51,7 +51,7 @@ static int validate_addresses(const char *filename){
         strip_trailing(line);
         if(is_blank(line)) continue;
         if(parse_address(line, &addr) != 0){
-            fprintf(stderr, "Erro: arquivo {%s} na linha {%d} invalido\n", filename, lineno);            
+            fprintf(stderr, "Erro: arquivo %s na linha %d invalido\n", filename, lineno);            
             fclose(f);
             return -1;
         }
@@ -59,7 +59,7 @@ static int validate_addresses(const char *filename){
     }
     fclose(f);
     if(count == 0){
-        fprintf(stderr, "Erro: arquivos sem endereço\n");
+        fprintf(stderr, "Erro: arquivo sem endereço\n");
         return -1;
     }
     return count;
@@ -85,11 +85,11 @@ int main(int argc, char *argv[]){
     int page_alg = parse_alg(argv[2]);
     int tlb_alg  = parse_alg(argv[3]);
     if(page_alg < 0){ 
-        fprintf(stderr, "Erro: algoritmo da página {%s} é inválido\n", argv[2]);
+        fprintf(stderr, "Erro: algoritmo da página %s é inválido\n", argv[2]);
         return 1;
      }
     if(tlb_alg  < 0){
-        fprintf(stderr, "Erro: algoritmo da TLB {%s} é inválido\n", argv[3]);
+        fprintf(stderr, "Erro: algoritmo da TLB %s é inválido\n", argv[3]);
         return 1;
     }
 
