@@ -96,6 +96,61 @@ int main(int argc, char *argv[]){
     int total = validate_addresses(argv[1]);
     if(total < 0) return 1;
 
-    // (a tradução vem aqui depois)
+    FILE *backing = fopen("BACKING_STORE.bin", "rb");
+    if(backing == NULL){
+        fprintf(stderr, "Erro: Não foi possivel abrir o arquivo{BACKING_STORE.bin}\n");
+        return 1;
+    }
+    FILE *in  = fopen(argv[1], "r");       // já validado, abre de novo para traduzir
+    FILE *out = fopen("correct.txt", "w");
+    if(in == NULL || out == NULL){
+        fprintf(stderr, "Erro: nao foi possivel abrir os arquivos\n");
+        if(in != NULL){
+            fclose(in); 
+        }
+        if(out != NULL){
+            fclose(out); 
+        }
+        fclose(backing); 
+        return 1;
+    }  
+
+    mem_init();
+
+    char line[LINE_MAX_LEN];
+    int addr, now = 0, faults = 0, hits = 0, total_lidos = 0;
+    while(fgets(line, sizeof line, in) != NULL){
+        strip_trailing(line);
+        if(is_blank(line)) continue;
+        parse_address(line, &addr);         // já validado, não falha
+        now++;
+        total_lidos++;
+
+        int page   = (addr >> 8) & 0xFF;    // os 8 bits de cima
+        int offset = addr & 0xFF;   // os 8 bits de baixo
+
+        int frame = mem_lookup(page);
+        if(frame == -1){                    // page fault
+            faults++;
+            int removida;
+            frame = mem_page_fault(page, backing, page_alg, &removida);
+            // (depois: se removida != -1, invalidar na TLB)
+        }
+        mem_touch(frame, now);              // TODO acesso conta para o LRU
+
+        int fisico = (frame * PAGE_SIZE) + offset;
+        int valor  = mem_read(frame, offset);
+        fprintf(out, "Virtual address: %d TLB: %d Physical address: %d Value: %d\n",addr, 0, fisico, valor);    // o 0 da TLB é provisório
+    }
+
+    fprintf(out, "Number of Translated Addresses = %d\n", total_lidos);
+    fprintf(out, "Page Faults = %d\n",faults);
+    fprintf(out, "Page Fault Rate = %.3f\n", (double) faults / total_lidos);
+    fprintf(out, "TLB Hits = %d\n", hits);
+    fprintf(out, "TLB Hit Rate = %.3f\n", (double) hits / total_lidos);
+
+    fclose(in); 
+    fclose(out); 
+    fclose(backing);
     return 0;
 }
