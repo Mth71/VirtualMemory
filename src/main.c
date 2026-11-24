@@ -116,6 +116,7 @@ int main(int argc, char *argv[]){
     }  
 
     mem_init();
+    tlb_init(); 
 
     char line[LINE_MAX_LEN];
     int addr, now = 0, faults = 0, hits = 0, total_lidos = 0;
@@ -129,18 +130,27 @@ int main(int argc, char *argv[]){
         int page   = (addr >> 8) & 0xFF;    // os 8 bits de cima
         int offset = addr & 0xFF;   // os 8 bits de baixo
 
-        int frame = mem_lookup(page);
-        if(frame == -1){                    // page fault
-            faults++;
-            int removida;
-            frame = mem_page_fault(page, backing, page_alg, &removida);
-            // (depois: se removida != -1, invalidar na TLB)
+        int frame;
+        int idx = tlb_search(page, &frame);
+        if(idx >= 0){                             
+            hits++;
+            tlb_touch(idx, now);
+        } else {                                  
+            frame = mem_lookup(page);             
+            if(frame == -1){
+                faults++;
+                int removida;
+                frame = mem_page_fault(page, backing, page_alg, &removida);
+                if(removida != -1){                         
+                    tlb_invalidate(removida);
+                }
+            }
+            idx = tlb_input(page, frame, tlb_alg, now);
         }
-        mem_touch(frame, now);              // TODO acesso conta para o LRU
-
+        mem_touch(frame, now);                
         int fisico = (frame * PAGE_SIZE) + offset;
         int valor  = mem_read(frame, offset);
-        fprintf(out, "Virtual address: %d TLB: %d Physical address: %d Value: %d\n",addr, 0, fisico, valor);    // o 0 da TLB é provisório
+        fprintf(out, "Virtual address: %d TLB: %d Physical address: %d Value: %d\n",addr, idx, fisico, valor);    
     }
 
     fprintf(out, "Number of Translated Addresses = %d\n", total_lidos);
